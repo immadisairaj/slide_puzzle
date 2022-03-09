@@ -47,13 +47,17 @@ class DashatarPuzzleTile extends StatefulWidget {
 /// The state of [DashatarPuzzleTile].
 @visibleForTesting
 class DashatarPuzzleTileState extends State<DashatarPuzzleTile>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   AudioPlayer? _audioPlayer;
   late final Timer _timer;
 
   /// The controller that drives [_scale] animation.
   late AnimationController _controller;
   late Animation<double> _scale;
+
+  /// The controller that drives [_scalePressed] animation.
+  late AnimationController _controllerPressed;
+  late Animation<double> _scalePressed;
 
   @override
   void initState() {
@@ -71,12 +75,37 @@ class DashatarPuzzleTileState extends State<DashatarPuzzleTile>
       ),
     );
 
+    _controllerPressed = AnimationController(
+      vsync: this,
+      duration: PuzzleThemeAnimationDuration.puzzleTileScale,
+    );
+
+    _scalePressed = Tween<double>(begin: 1, end: 0.2).animate(
+      CurvedAnimation(
+        parent: _controllerPressed,
+        curve: const Interval(0, 1, curve: Curves.easeInOut),
+      ),
+    );
+
     // Delay the initialization of the audio player for performance reasons,
     // to avoid dropping frames when the theme is changed.
     _timer = Timer(const Duration(seconds: 1), () {
       _audioPlayer = widget._audioPlayerFactory()
         ..setAsset('assets/audio/tile_move.mp3');
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant DashatarPuzzleTile oldWidget) {
+    final ready = widget.state.lastTappedTile != null;
+    // When a particular tile is changed, animate the tile when moving to
+    // new position. Animation is done only after the puzle is ready
+    if (ready && oldWidget.tile != widget.tile) {
+      _controllerPressed
+          .forward()
+          .then((value) => _controllerPressed.reverse());
+    }
+    super.didUpdateWidget(oldWidget);
   }
 
   @override
@@ -137,25 +166,32 @@ class DashatarPuzzleTileState extends State<DashatarPuzzleTile>
             onExit: (_) {
               if (canPress) {
                 _controller.reverse();
+                _controllerPressed.reverse();
               }
             },
             child: ScaleTransition(
-              key: Key('dashatar_puzzle_tile_scale_${widget.tile.value}'),
-              scale: _scale,
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                onPressed: canPress
-                    ? () {
-                        context.read<PuzzleBloc>().add(TileTapped(widget.tile));
-                        unawaited(_audioPlayer?.replay());
-                      }
-                    : null,
-                icon: Image.asset(
-                  theme.dashAssetForTile(widget.tile),
-                  semanticLabel: context.l10n.puzzleTileLabelText(
-                    widget.tile.value.toString(),
-                    widget.tile.currentPosition.x.toString(),
-                    widget.tile.currentPosition.y.toString(),
+              scale: _scalePressed,
+              child: ScaleTransition(
+                key: Key('dashatar_puzzle_tile_scale_${widget.tile.value}'),
+                scale: _scale,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: canPress
+                      ? () {
+                          _controllerPressed.forward();
+                          context
+                              .read<PuzzleBloc>()
+                              .add(TileTapped(widget.tile));
+                          unawaited(_audioPlayer?.replay());
+                        }
+                      : null,
+                  icon: Image.asset(
+                    theme.dashAssetForTile(widget.tile),
+                    semanticLabel: context.l10n.puzzleTileLabelText(
+                      widget.tile.value.toString(),
+                      widget.tile.currentPosition.x.toString(),
+                      widget.tile.currentPosition.y.toString(),
+                    ),
                   ),
                 ),
               ),
