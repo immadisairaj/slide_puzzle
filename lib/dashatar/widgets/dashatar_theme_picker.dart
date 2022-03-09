@@ -69,54 +69,59 @@ class _DashatarThemePickerState extends State<DashatarThemePicker> {
               ? DashatarThemePicker._inactiveThemeSmallSize
               : DashatarThemePicker._inactiveThemeNormalSize;
 
-          return SizedBox(
-            key: const Key('dashatar_theme_picker'),
-            height: activeSize,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                themeState.themes.length,
-                (index) {
-                  final theme = themeState.themes[index];
-                  final isActiveTheme = theme == activeTheme;
-                  final padding = index > 0 ? (isSmallSize ? 4.0 : 8.0) : 0.0;
-                  final size = isActiveTheme ? activeSize : inactiveSize;
+          return Padding(
+            padding: EdgeInsets.only(left: isSmallSize ? 20 : 0),
+            child: SizedBox(
+              key: const Key('dashatar_theme_picker'),
+              height: activeSize,
+              child: Row(
+                mainAxisAlignment: isSmallSize
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
+                children: List.generate(
+                  themeState.themes.length,
+                  (index) {
+                    final theme = themeState.themes[index];
+                    final isActiveTheme = theme == activeTheme;
+                    final padding = index > 0 ? (isSmallSize ? 4.0 : 8.0) : 0.0;
+                    final size = isActiveTheme ? activeSize : inactiveSize;
 
-                  return Padding(
-                    padding: EdgeInsets.only(left: padding),
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        key: Key('dashatar_theme_picker_$index'),
-                        onTap: () async {
-                          if (isActiveTheme) {
-                            return;
-                          }
+                    return Padding(
+                      padding: EdgeInsets.only(left: padding),
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          key: Key('dashatar_theme_picker_$index'),
+                          onTap: () async {
+                            if (isActiveTheme) {
+                              return;
+                            }
 
-                          // Update the current Dashatar theme.
-                          context
-                              .read<DashatarThemeBloc>()
-                              .add(DashatarThemeChanged(themeIndex: index));
+                            // Update the current Dashatar theme.
+                            context
+                                .read<DashatarThemeBloc>()
+                                .add(DashatarThemeChanged(themeIndex: index));
 
-                          // Play the audio of the current Dashatar theme.
-                          await _audioPlayer.setAsset(theme.audioAsset);
-                          unawaited(_audioPlayer.play());
-                        },
-                        child: AnimatedContainer(
-                          width: size,
-                          height: size,
-                          curve: Curves.easeInOut,
-                          duration: const Duration(milliseconds: 350),
-                          child: Image.asset(
-                            theme.themeAsset,
-                            fit: BoxFit.fill,
-                            semanticLabel: theme.semanticsLabel(context),
+                            // Play the audio of the current Dashatar theme.
+                            await _audioPlayer.setAsset(theme.audioAsset);
+                            unawaited(_audioPlayer.play());
+                          },
+                          child: AnimatedContainer(
+                            width: size,
+                            height: size,
+                            curve: Curves.easeInOut,
+                            duration: const Duration(milliseconds: 350),
+                            child: Image.asset(
+                              theme.themeAsset,
+                              fit: BoxFit.fill,
+                              semanticLabel: theme.semanticsLabel(context),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           );

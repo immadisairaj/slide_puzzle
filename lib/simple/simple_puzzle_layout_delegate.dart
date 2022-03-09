@@ -179,8 +179,8 @@ class SimplePuzzleLayoutDelegate extends PuzzleLayoutDelegate {
       small: (_, __) => const Align(
         alignment: Alignment.bottomRight,
         child: SizedBox(
-          width: 150,
-          height: 150,
+          width: 160,
+          height: 160,
           child: SimpleArrowPad(
             key: Key('simple_puzzle_arrow_pad_small'),
             padding: EdgeInsets.only(bottom: 20, right: 20),
