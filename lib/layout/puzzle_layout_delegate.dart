@@ -52,4 +52,8 @@ abstract class PuzzleLayoutDelegate extends Equatable {
 
   /// A widget builder for the whitespace puzzle tile.
   Widget whitespaceTileBuilder();
+
+  /// A widget builder for the arrow pad of the puzzle based on
+  /// the puzzle [state].
+  Widget arrowPadBuilder(PuzzleState state);
 }

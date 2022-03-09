@@ -1,3 +1,4 @@
+import 'package:arrow_pad/arrow_pad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -141,6 +142,7 @@ class _Puzzle extends StatelessWidget {
             ),
             if (theme is! SimpleTheme)
               theme.layoutDelegate.backgroundBuilder(state),
+            theme.layoutDelegate.arrowPadBuilder(state),
           ],
         );
       },

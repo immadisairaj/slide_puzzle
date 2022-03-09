@@ -118,5 +118,46 @@ class DashatarPuzzleLayoutDelegate extends PuzzleLayoutDelegate {
   }
 
   @override
+  Widget arrowPadBuilder(PuzzleState state) {
+    return ResponsiveLayoutBuilder(
+      small: (_, __) => const Align(
+        alignment: Alignment.bottomRight,
+        child: SizedBox(
+          width: 150,
+          height: 150,
+          child: DashatarArrowPad(
+            key: Key('simple_puzzle_arrow_pad_small'),
+            padding: EdgeInsets.only(bottom: 20, right: 20),
+          ),
+        ),
+      ),
+      medium: (_, __) => const Align(
+        alignment: Alignment.bottomRight,
+        child: SizedBox(
+          width: 180,
+          height: 180,
+          child: DashatarArrowPad(
+            key: Key('simple_puzzle_arrow_pad_medium'),
+            padding: EdgeInsets.only(bottom: 30, right: 30),
+          ),
+        ),
+      ),
+      large: (_, __) => const Align(
+        alignment: Alignment.bottomLeft,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 60, left: 200),
+          child: SizedBox(
+            width: 180,
+            height: 180,
+            child: DashatarArrowPad(
+              key: Key('simple_puzzle_arrow_pad_large'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   List<Object?> get props => [];
 }

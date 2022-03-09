@@ -8,6 +8,7 @@ environment:
   flutter: 2.8.0
 
 dependencies:
+  arrow_pad: ^0.1.4
   bloc: ^8.0.1
   equatable: ^2.0.3
   fake_async: ^1.2.0

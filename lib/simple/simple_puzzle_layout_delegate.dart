@@ -1,13 +1,20 @@
+import 'dart:async';
+
+import 'package:arrow_pad/arrow_pad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:very_good_slide_puzzle/colors/colors.dart';
+import 'package:very_good_slide_puzzle/dashatar/dashatar.dart';
+import 'package:very_good_slide_puzzle/helpers/helpers.dart';
 import 'package:very_good_slide_puzzle/l10n/l10n.dart';
 import 'package:very_good_slide_puzzle/layout/layout.dart';
 import 'package:very_good_slide_puzzle/models/models.dart';
 import 'package:very_good_slide_puzzle/puzzle/puzzle.dart';
 import 'package:very_good_slide_puzzle/simple/simple.dart';
 import 'package:very_good_slide_puzzle/theme/theme.dart';
+import 'package:very_good_slide_puzzle/timer/timer.dart';
 import 'package:very_good_slide_puzzle/typography/typography.dart';
 
 /// {@template simple_puzzle_layout_delegate}
@@ -54,11 +61,10 @@ class SimplePuzzleLayoutDelegate extends PuzzleLayoutDelegate {
 
   @override
   Widget backgroundBuilder(PuzzleState state) {
-    return Positioned(
-      right: 0,
-      bottom: 0,
-      child: ResponsiveLayoutBuilder(
-        small: (_, __) => SizedBox(
+    return ResponsiveLayoutBuilder(
+      small: (_, __) => Align(
+        alignment: Alignment.bottomLeft,
+        child: SizedBox(
           width: 184,
           height: 118,
           child: Image.asset(
@@ -66,7 +72,10 @@ class SimplePuzzleLayoutDelegate extends PuzzleLayoutDelegate {
             key: const Key('simple_puzzle_dash_small'),
           ),
         ),
-        medium: (_, __) => SizedBox(
+      ),
+      medium: (_, __) => Align(
+        alignment: Alignment.bottomLeft,
+        child: SizedBox(
           width: 380.44,
           height: 214,
           child: Image.asset(
@@ -74,7 +83,10 @@ class SimplePuzzleLayoutDelegate extends PuzzleLayoutDelegate {
             key: const Key('simple_puzzle_dash_medium'),
           ),
         ),
-        large: (_, __) => Padding(
+      ),
+      large: (_, __) => Align(
+        alignment: Alignment.bottomRight,
+        child: Padding(
           padding: const EdgeInsets.only(bottom: 53),
           child: SizedBox(
             width: 568.99,
@@ -159,6 +171,47 @@ class SimplePuzzleLayoutDelegate extends PuzzleLayoutDelegate {
   @override
   Widget whitespaceTileBuilder() {
     return const SizedBox();
+  }
+
+  @override
+  Widget arrowPadBuilder(PuzzleState state) {
+    return ResponsiveLayoutBuilder(
+      small: (_, __) => const Align(
+        alignment: Alignment.bottomRight,
+        child: SizedBox(
+          width: 150,
+          height: 150,
+          child: SimpleArrowPad(
+            key: Key('simple_puzzle_arrow_pad_small'),
+            padding: EdgeInsets.only(bottom: 20, right: 20),
+          ),
+        ),
+      ),
+      medium: (_, __) => const Align(
+        alignment: Alignment.bottomRight,
+        child: SizedBox(
+          width: 180,
+          height: 180,
+          child: SimpleArrowPad(
+            key: Key('simple_puzzle_arrow_pad_medium'),
+            padding: EdgeInsets.only(bottom: 30, right: 30),
+          ),
+        ),
+      ),
+      large: (_, __) => const Align(
+        alignment: Alignment.bottomLeft,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 60, left: 200),
+          child: SizedBox(
+            width: 180,
+            height: 180,
+            child: SimpleArrowPad(
+              key: Key('simple_puzzle_arrow_pad_large'),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -389,6 +442,99 @@ class SimplePuzzleShuffleButton extends StatelessWidget {
           const Gap(10),
           Text(context.l10n.puzzleShuffle),
         ],
+      ),
+    );
+  }
+}
+
+enum _ArrowDirection { up, down, left, right }
+
+class SimpleArrowPad extends StatefulWidget {
+  const SimpleArrowPad(
+      {Key? key, this.padding, AudioPlayerFactory? audioPlayer})
+      : _audioPlayerFactory = audioPlayer ?? getAudioPlayer,
+        super(key: key);
+
+  final EdgeInsetsGeometry? padding;
+
+  final AudioPlayerFactory _audioPlayerFactory;
+
+  @override
+  State<SimpleArrowPad> createState() => _SimpleArrowPadState();
+}
+
+class _SimpleArrowPadState extends State<SimpleArrowPad> {
+  late final AudioPlayer _audioPlayer;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = widget._audioPlayerFactory()
+      ..setAsset('assets/audio/tile_move.mp3');
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  void _handleArrowPress(BuildContext context, _ArrowDirection arrowDirection) {
+    final theme = context.read<ThemeBloc>().state.theme;
+
+    // The user may move tiles only when the puzzle is started.
+    // There's no need to check the Simple theme as it is started by default.
+    final canMoveTiles = !(theme is DashatarTheme &&
+        context.read<DashatarPuzzleBloc>().state.status !=
+            DashatarPuzzleStatus.started);
+
+    if (canMoveTiles) {
+      final puzzle = context.read<PuzzleBloc>().state.puzzle;
+
+      Tile? tile;
+      switch (arrowDirection) {
+        case _ArrowDirection.up:
+          tile = puzzle.getTileRelativeToWhitespaceTile(const Offset(0, 1));
+          break;
+        case _ArrowDirection.down:
+          tile = puzzle.getTileRelativeToWhitespaceTile(const Offset(0, -1));
+          break;
+        case _ArrowDirection.left:
+          tile = puzzle.getTileRelativeToWhitespaceTile(const Offset(1, 0));
+          break;
+        case _ArrowDirection.right:
+          tile = puzzle.getTileRelativeToWhitespaceTile(const Offset(-1, 0));
+          break;
+      }
+
+      if (tile != null) {
+        context.read<PuzzleBloc>().add(TileTapped(tile));
+        unawaited(_audioPlayer.replay());
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.select((ThemeBloc bloc) => bloc.state.theme);
+
+    return BlocListener<PuzzleBloc, PuzzleState>(
+      listener: (context, state) {
+        if (theme.hasTimer && state.puzzleStatus == PuzzleStatus.complete) {
+          context.read<TimerBloc>().add(const TimerStopped());
+        }
+      },
+      child: ArrowPad(
+        padding: widget.padding,
+        iconColor: PuzzleColors.white,
+        outerColor: theme.pressedColor,
+        innerColor: theme.defaultColor,
+        hoverColor: theme.hoverColor,
+        splashColor: PuzzleColors.primary6,
+        onPressedUp: () => _handleArrowPress(context, _ArrowDirection.up),
+        onPressedDown: () => _handleArrowPress(context, _ArrowDirection.down),
+        onPressedLeft: () => _handleArrowPress(context, _ArrowDirection.left),
+        onPressedRight: () => _handleArrowPress(context, _ArrowDirection.right),
       ),
     );
   }
