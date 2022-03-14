@@ -166,7 +166,6 @@ class DashatarPuzzleTileState extends State<DashatarPuzzleTile>
             onExit: (_) {
               if (canPress) {
                 _controller.reverse();
-                _controllerPressed.reverse();
               }
             },
             child: ScaleTransition(
@@ -178,7 +177,6 @@ class DashatarPuzzleTileState extends State<DashatarPuzzleTile>
                   padding: EdgeInsets.zero,
                   onPressed: canPress
                       ? () {
-                          _controllerPressed.forward();
                           context
                               .read<PuzzleBloc>()
                               .add(TileTapped(widget.tile));
